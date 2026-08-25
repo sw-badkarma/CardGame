@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="manifest" href="manifest.json">
+  <title>Card RPG Master Edition</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ECRAN AUTENTIFICARE (LOGIN / REGISTER) -->
+  <div class="overlay hidden fade-screen" id="auth-overlay">
+    <div class="modal auth-modal" style="position: relative;">
+      <button class="auth-close-btn" id="btn-close-auth">❌</button>
+      <h2>🛡️ Card RPG: Autentificare</h2>
+      <p style="font-size: 0.75rem; color: #94a3b8;">Conectează-te pentru a-ți salva progresul și realizările în Cloud!</p>
+      
+      <div class="name-box">
+        <input type="email" id="auth-email-input" placeholder="Adresă Email">
+      </div>
+      <div class="name-box" style="margin-top: 6px;">
+        <input type="password" id="auth-pass-input" placeholder="Parolă (min. 6 caractere)">
+      </div>
+
+      <div class="lobby-actions" style="margin-top: 10px;">
+        <button class="btn-primary" id="btn-login">🔑 Autentificare</button>
+        <button class="btn-primary btn-solo" id="btn-register">✨ Creează Cont Nou</button>
+      </div>
+      <div class="lobby-status" id="auth-status"></div>
+    </div>
+  </div>
+
+  <!-- MODAL ANUNȚ MOD OFFLINE -->
+  <div class="overlay hidden fade-screen" id="offline-warning-overlay">
+    <div class="modal offline-modal">
+      <div style="font-size: 2rem; margin-bottom: 4px;">⚠️</div>
+      <h2>Mod Offline Activat</h2>
+      <p style="font-size: 0.8rem; color: #94a3b8;">Te joci fără cont Cloud. Progresul se va salva doar local în browser.</p>
+      <button class="btn-primary" id="btn-close-offline-warning" style="margin-top: 10px;">Am înțeles, la joacă!</button>
+    </div>
+  </div>
+
+  <!-- CANVAS PENTRU PARTICULE & EFECTE -->
+  <canvas id="fx-canvas"></canvas>
+
+  <!-- ECRAN LOBBY UNIFICAT -->
+  <div class="overlay fade-screen" id="lobby-overlay">
+    <div class="modal lobby-modal">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Card RPG: Ultimate Edition</h2>
+        <button class="btn-primary" id="btn-toggle-sound" style="padding: 4px 8px; font-size: 0.7rem;">🔊 Sunet: ON</button>
+      </div>
+      
+      <div class="name-box">
+        <input type="text" id="player-name-input" placeholder="Numele tău (3-10 caractere)" maxlength="10">
+      </div>
+
+      <!-- SELECTOR CLASĂ / AVATAR -->
+      <div class="avatar-select-container">
+        <label>Alege Clasa:</label>
+        <div class="avatar-grid" id="avatar-grid">
+          <div class="avatar-option selected" data-avatar="🧙‍♂️" data-class="mage">🧙‍♂️</div>
+          <div class="avatar-option" data-avatar="🥷" data-class="ninja">🥷</div>
+          <div class="avatar-option" data-avatar="🧝‍♀️" data-class="elf">🧝‍♀️</div>
+          <div class="avatar-option" data-avatar="⚔️" data-class="knight">⚔️</div>
+          <div class="avatar-option" data-avatar="🧛" data-class="vampire">🧛</div>
+          <div class="avatar-option" data-avatar="🤖" data-class="cyborg">🤖</div>
+          <div class="avatar-option" data-avatar="🦁" data-class="beast">🦁</div>
+        </div>
+        <div class="class-desc-box" id="class-desc-display">Mager: +1 Energie Max, +10% Magic Damage.</div>
+      </div>
+
+      <!-- Meniu Talente, Leaderboard & Realizări -->
+      <div style="display: flex; gap: 4px; width: 100%;">
+        <button class="btn-primary btn-talents" id="btn-open-talents" style="flex: 1; font-size: 0.7rem;">✨ Talente</button>
+        <button class="btn-primary" id="btn-open-leaderboard" style="background: #d97706 !important; flex: 1; font-size: 0.7rem;">🏆 Top</button>
+        <button class="btn-primary" id="btn-open-achievements" style="background: #0284c7 !important; flex: 1; font-size: 0.7rem;">🏅 Insigne</button>
+      </div>
+
+      <div class="lobby-actions">
+        <button class="btn-primary btn-solo" id="btn-play-solo">🎮 Aventura Solo (500 Lvl)</button>
+        <button class="btn-primary btn-continue hidden" id="btn-continue-solo">▶️ Continuă Solo</button>
+        
+        <div class="divider">──────── MULTIPLAYER ────────</div>
+        
+        <div class="multi-mode-select">
+          <label><input type="radio" name="multi-type" value="pvp" checked> PvP (1 vs 1)</label>
+          <label><input type="radio" name="multi-type" value="coop"> Co-op Raid vs Boss 🐉</label>
+        </div>
+
+        <button class="btn-primary" id="btn-create-room">👥 Creează Cameră Nouă</button>
+        
+        <div class="join-box">
+          <input type="text" id="room-code-input" placeholder="Cod (ex: 4921)" maxlength="4">
+          <button class="btn-primary" id="btn-join-room">Intră</button>
+        </div>
+      </div>
+      <div class="lobby-status" id="lobby-status"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CLASAMENT GLOBAL (LEADERBOARD) -->
+  <div class="overlay hidden fade-screen" id="leaderboard-overlay">
+    <div class="modal talents-modal">
+      <h2>🏆 Clasament Global Solo</h2>
+      <div class="talents-list" id="leaderboard-container" style="max-height: 250px;"></div>
+      <button class="btn-primary" id="btn-close-leaderboard">Închide</button>
+    </div>
+  </div>
+
+  <!-- MODAL REALIZĂRI (ACHIEVEMENTS) -->
+  <div class="overlay hidden fade-screen" id="achievements-overlay">
+    <div class="modal talents-modal">
+      <h2>🏅 Realizări Deblocabile</h2>
+      <div class="talents-list" id="achievements-container" style="max-height: 250px;"></div>
+      <button class="btn-primary" id="btn-close-achievements">Închide</button>
+    </div>
+  </div>
+
+  <!-- MODAL TALENTE PERMANENTE -->
+  <div class="overlay hidden fade-screen" id="talents-overlay">
+    <div class="modal talents-modal">
+      <h2>✨ Talente Permanente</h2>
+      <p>Puncte XP disponibile: ⭐ <span id="talent-xp-count">0</span></p>
+      <div class="talents-list" id="talents-container"></div>
+      <button class="btn-primary" id="btn-close-talents">Închide</button>
+    </div>
+  </div>
+
+  <!-- MODAL EVENIMENT MISTERIOS -->
+  <div class="overlay hidden fade-screen" id="event-overlay">
+    <div class="modal event-modal">
+      <h2 id="event-title">✨ Întâlnire Misterioasă</h2>
+      <p id="event-desc">Ai găsit o altare străveche pe drum...</p>
+      <div class="event-choices" id="event-choices-container"></div>
+    </div>
+  </div>
+
+  <!-- MODAL MAGAZIN (SHOP SOLO) -->
+  <div class="overlay hidden fade-screen" id="shop-overlay">
+    <div class="modal shop-modal">
+      <h2>🏬 Magazinul Aventurierului</h2>
+      <p>Monede disponibile: 💰 <span id="shop-coins">0</span></p>
+
+      <div class="shop-tabs">
+        <button class="shop-tab active" id="tab-buy">Cărți & Sinergii</button>
+        <button class="shop-tab" id="tab-relics">Artefacte</button>
+        <button class="shop-tab" id="tab-remove">Șterge (25 💰)</button>
+      </div>
+
+      <div class="shop-items" id="shop-items-container"></div>
+      <button class="btn-primary" id="btn-next-stage">➡️ Treci la Nivelul Următor</button>
+    </div>
+  </div>
+
+  <!-- MODAL PAUZĂ -->
+  <div class="overlay hidden fade-screen" id="pause-overlay">
+    <div class="modal pause-modal">
+      <h2>⚙️ Pauză</h2>
+      <button class="btn-primary" id="btn-resume">▶️ Continuă Lupta</button>
+      <button class="btn-primary btn-danger" id="btn-exit-lobby">🚪 Ieși în Lobby</button>
+    </div>
+  </div>
+
+  <!-- ECRAN JOC -->
+  <div class="game-container hidden fade-screen" id="game-container">
+    <header class="top-bar">
+      <div class="char-hud player-hud">
+        <div class="hud-header">
+          <span class="char-name" id="p1-name">Erou (P1)</span>
+          <button class="btn-pause" id="btn-pause-game">⚙️</button>
+        </div>
+        <div class="hud-stats">
+          <span class="stat-badge hp">❤️ <span id="p1-hp">100</span>/<span id="p1-max-hp">100</span></span>
+          <span class="stat-badge shield">🛡️ <span id="p1-shield">0</span></span>
+          <span class="stat-badge energy">⚡ <span id="p1-energy">3</span>/<span id="p1-max-energy">3</span></span>
+          <span class="stat-badge trap hidden" id="p1-trap-wrap">🪤 Capcană</span>
+          <span class="stat-badge coins-display hidden" id="p1-coins-wrap">💰 <span id="p1-coins">0</span></span>
+          <span class="stat-badge stun hidden" id="p1-stun-wrap">🧊 Înghețat</span>
+        </div>
+        <div class="ult-bar-wrap" id="ult-bar-wrap">
+          <div class="ult-bar-fill" id="ult-bar-fill"></div>
+          <button class="btn-ult" id="btn-activate-ult" disabled>⚡ ULTIMATE</button>
+        </div>
+        <div class="relics-bar" id="player-relics-bar"></div>
+      </div>
+
+      <div class="char-hud enemy-hud">
+        <div class="hud-header">
+          <span class="char-name" id="p2-name">Adversar</span>
+        </div>
+        <div class="hud-stats">
+          <span class="stat-badge hp">❤️ <span id="p2-hp">100</span>/<span id="p2-max-hp">100</span></span>
+          <span class="stat-badge shield">🛡️ <span id="p2-shield">0</span></span>
+          <span class="stat-badge bleed hidden" id="p2-bleed-wrap">🩸 <span id="p2-bleed">0</span></span>
+          <span class="stat-badge trap hidden" id="p2-trap-wrap">🪤 Capcană</span>
+          <span class="stat-badge poison hidden" id="p2-poison-wrap">🧪 <span id="p2-poison">0</span></span>
+          <span class="stat-badge stun hidden" id="p2-stun-wrap">🧊 Înghețat</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="game-meta-bar">
+      <div class="weather-badge" id="weather-display">☀️ Vreme Normală</div>
+      <div class="timer-badge" id="turn-timer">⏳ 15s</div>
+    </div>
+
+    <main class="battle-arena biome-forest" id="arena">
+      <div class="avatar player-avatar" id="player-avatar">🧙‍♂️</div>
+      <div class="vs-badge">
+        <span id="room-id-display">----</span>
+        <div id="stage-display" style="font-size: 0.75rem; color: #facc15; margin-top: 4px;">NIVEL 1 din 500</div>
+      </div>
+      <div class="avatar enemy-avatar" id="enemy-avatar">👺</div>
+    </main>
+
+    <div class="combat-log" id="combat-log">Așteptare conectare jucători...</div>
+
+    <div class="controls-bar">
+      <div class="deck-counter">🎴 In: <span id="draw-count">0</span> | Out: <span id="discard-count">0</span></div>
+      
+      <div class="emotes-wrapper">
+        <button class="btn-emotes-toggle" id="btn-emotes">💬</button>
+        <div class="emotes-popover hidden" id="emotes-popover">
+          <span class="emote-btn">👍</span>
+          <span class="emote-btn">👺</span>
+          <span class="emote-btn">👏</span>
+          <span class="emote-btn">❄️</span>
+          <span class="emote-btn">💀</span>
+          <span class="emote-btn">🔥</span>
+        </div>
+      </div>
+
+      <div class="reserve-slot-wrap">
+        <span>📌</span>
+        <div class="reserve-slot" id="reserve-slot-box">➕</div>
+      </div>
+      <button id="end-turn-btn" class="btn-end-turn">Termină Tura</button>
+    </div>
+
+    <footer class="hand-container" id="hand-container"></footer>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
